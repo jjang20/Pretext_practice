@@ -141,8 +141,7 @@ function render() {
     const visible = lineY > -LINE_HEIGHT && lineY < H + LINE_HEIGHT;
 
     // Check overlap with character silhouette (use live data if available)
-    // On mobile, skip silhouette wrapping — character is layered on top of text
-    const edges = (W >= 640 && frame)
+    const edges = frame
       ? liveEdgesAtY(lineY + LINE_HEIGHT * 0.5, rezeX, rezeY, rezeW, rezeH, frame, GAP)
       : null;
 
@@ -153,17 +152,31 @@ function render() {
 
       let nextCursor = cursor;
 
-      if (leftWidth > 40) {
-        const seg = layoutNextLine(prepared, cursor, leftWidth);
-        if (!seg) break;
-        if (visible) ctx.fillText(seg.text, PADDING, lineY);
-        nextCursor = seg.end;
-      }
-      if (rightWidth > 40) {
-        const seg = layoutNextLine(prepared, nextCursor, rightWidth);
-        if (seg) {
-          if (visible) ctx.fillText(seg.text, rightStart, lineY);
+      if (W < 640) {
+        // Mobile: use only the wider side to keep text readable
+        const useLeft = leftWidth >= rightWidth;
+        const colW = useLeft ? leftWidth : rightWidth;
+        const colX = useLeft ? PADDING : rightStart;
+        if (colW > 60) {
+          const seg = layoutNextLine(prepared, cursor, colW);
+          if (!seg) break;
+          if (visible) ctx.fillText(seg.text, colX, lineY);
           nextCursor = seg.end;
+        }
+      } else {
+        // Desktop: split text into left + right columns
+        if (leftWidth > 40) {
+          const seg = layoutNextLine(prepared, cursor, leftWidth);
+          if (!seg) break;
+          if (visible) ctx.fillText(seg.text, PADDING, lineY);
+          nextCursor = seg.end;
+        }
+        if (rightWidth > 40) {
+          const seg = layoutNextLine(prepared, nextCursor, rightWidth);
+          if (seg) {
+            if (visible) ctx.fillText(seg.text, rightStart, lineY);
+            nextCursor = seg.end;
+          }
         }
       }
       cursor = nextCursor;
