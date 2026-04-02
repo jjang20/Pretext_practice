@@ -23,7 +23,7 @@ Chainsaw Man asks you to sit with the fact that people can be simultaneously the
 const FONT_SIZE   = 17;
 const LINE_HEIGHT = FONT_SIZE * 1.72;
 const FONT        = `${FONT_SIZE}px Georgia, serif`;
-const PADDING     = 64;
+const PADDING     = 24;
 const GAP         = 32;
 
 // ─── State ───────────────────────────────────────────────────────────────────
