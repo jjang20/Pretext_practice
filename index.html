@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chainsaw Man — On Hunger, Devils, and Freedom</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #f5f0e8; }
+    canvas#main { display: block; }
+    #reze-video {
+      position: fixed; top: -9999px; left: -9999px;
+      width: 1px; height: 1px; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="main"></canvas>
+
+  <!-- Reze video: hidden, canvas reads frames each RAF tick -->
+  <video id="reze-video" src="assets/reze_dance.mp4"
+    autoplay loop muted playsinline crossorigin="anonymous">
+  </video>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

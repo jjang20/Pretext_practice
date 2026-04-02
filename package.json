@@ -1,0 +1,11 @@
+{
+  "name": "pretext-character-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "npx serve . --no-clipboard -l $PORT"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "latest"
+  }
+}
