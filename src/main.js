@@ -82,10 +82,24 @@ window.addEventListener('wheel', e => {
   targetScrollY = Math.max(0, targetScrollY + e.deltaY);
 }, { passive: true });
 
+let touchStartY = 0;
+canvas.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const dy = touchStartY - e.touches[0].clientY;
+  touchStartY = e.touches[0].clientY;
+  targetScrollY = Math.max(0, targetScrollY + dy);
+}, { passive: false });
+
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
   requestAnimationFrame(render);
   if (!prepared) return;
+
+  if (reze.paused) reze.play().catch(() => {});
 
   scrollY += (targetScrollY - scrollY) * 0.11;
 
@@ -189,6 +203,18 @@ function render() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 reze.addEventListener('canplay', () => reze.play().catch(() => {}));
+
+// Seamless loop: seek back to 0 just before the video ends
+reze.addEventListener('timeupdate', () => {
+  if (reze.duration && reze.currentTime > reze.duration - 0.3) {
+    reze.currentTime = 0;
+  }
+});
+reze.addEventListener('ended', () => {
+  reze.currentTime = 0;
+  reze.play().catch(() => {});
+});
+
 reze.play().catch(() => {});
 
 window.addEventListener('resize', resize);
