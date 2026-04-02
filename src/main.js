@@ -23,7 +23,8 @@ Chainsaw Man asks you to sit with the fact that people can be simultaneously the
 const FONT_SIZE   = 17;
 const LINE_HEIGHT = FONT_SIZE * 1.72;
 const FONT        = `${FONT_SIZE}px Georgia, serif`;
-const PADDING     = 64;
+const IS_MOBILE   = window.innerWidth < 640;
+const PADDING     = IS_MOBILE ? 24 : 64;
 const GAP         = 32;
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -202,10 +203,20 @@ function render() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 reze.addEventListener('canplay', () => reze.play().catch(() => {}));
+
+// Seamless loop: seek back to 0 just before the video ends to avoid the
+// pause/flash gap that the native `loop` attribute causes on mobile browsers.
+reze.addEventListener('timeupdate', () => {
+  if (reze.duration && reze.currentTime > reze.duration - 0.3) {
+    reze.currentTime = 0;
+  }
+});
+// Fallback in case timeupdate misses the window
 reze.addEventListener('ended', () => {
   reze.currentTime = 0;
   reze.play().catch(() => {});
 });
+
 reze.play().catch(() => {});
 
 window.addEventListener('resize', resize);
