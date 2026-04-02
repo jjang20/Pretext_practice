@@ -82,10 +82,23 @@ window.addEventListener('wheel', e => {
   targetScrollY = Math.max(0, targetScrollY + e.deltaY);
 }, { passive: true });
 
+let touchStartY = 0;
+window.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  const dy = touchStartY - e.touches[0].clientY;
+  touchStartY = e.touches[0].clientY;
+  targetScrollY = Math.max(0, targetScrollY + dy);
+}, { passive: true });
+
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
   requestAnimationFrame(render);
   if (!prepared) return;
+
+  if (reze.paused) reze.play().catch(() => {});
 
   scrollY += (targetScrollY - scrollY) * 0.11;
 
@@ -189,6 +202,10 @@ function render() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 reze.addEventListener('canplay', () => reze.play().catch(() => {}));
+reze.addEventListener('ended', () => {
+  reze.currentTime = 0;
+  reze.play().catch(() => {});
+});
 reze.play().catch(() => {});
 
 window.addEventListener('resize', resize);
