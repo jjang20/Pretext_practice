@@ -23,9 +23,7 @@ Chainsaw Man asks you to sit with the fact that people can be simultaneously the
 const FONT_SIZE   = 17;
 const LINE_HEIGHT = FONT_SIZE * 1.72;
 const FONT        = `${FONT_SIZE}px Georgia, serif`;
-const IS_MOBILE   = window.innerWidth < 640;
-const PADDING     = IS_MOBILE ? 24 : 64;
-const GAP         = 32;
+function getGap(W) { return W < 640 ? 12 : 32; }
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('main');
@@ -36,9 +34,14 @@ let scrollY       = 0;
 let targetScrollY = 0;
 let prepared      = null;
 
+// ─── Responsive helpers ─────────────────────────────────────────────────────
+function getPadding(W) {
+  return W < 640 ? 24 : 64;
+}
+
 // ─── Character metrics (FIXED at centre of viewport) ────────────────────────
 function getRezeMetrics(W, H) {
-  const rezeH = Math.min(H * 0.85, 700);
+  const rezeH = Math.min(H * (W < 640 ? 0.55 : 0.85), W < 640 ? 400 : 700);
   const rezeW = Math.floor(rezeH * 9 / 16);
   const rezeX = Math.floor(W / 2 - rezeW / 2);
   const rezeY = Math.floor((H - rezeH) / 2);
@@ -48,7 +51,7 @@ function getRezeMetrics(W, H) {
 // ─── Live silhouette lookup ──────────────────────────────────────────────────
 // Read the CURRENT frame's per-row content bounds to get the character's
 // left/right pixel edges at a given screen Y.
-function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame) {
+function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame, gap) {
   const relY = (screenY - rezeY) / rezeH;
   if (relY < 0 || relY >= 1) return null;
 
@@ -65,8 +68,8 @@ function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame) {
   if (minL >= maxR) return null;
 
   return {
-    left:  rezeX + (minL / frame.vw) * rezeW - GAP,
-    right: rezeX + (maxR / frame.vw) * rezeW + GAP,
+    left:  rezeX + (minL / frame.vw) * rezeW - gap,
+    right: rezeX + (maxR / frame.vw) * rezeW + gap,
   };
 }
 
@@ -105,6 +108,8 @@ function render() {
 
   const W = canvas.width;
   const H = canvas.height;
+  const PADDING = getPadding(W);
+  const GAP     = getGap(W);
 
   // ── Background ──
   ctx.fillStyle = '#f5f0e8';
@@ -135,8 +140,9 @@ function render() {
     const visible = lineY > -LINE_HEIGHT && lineY < H + LINE_HEIGHT;
 
     // Check overlap with character silhouette (use live data if available)
-    const edges = frame
-      ? liveEdgesAtY(lineY + LINE_HEIGHT * 0.5, rezeX, rezeY, rezeW, rezeH, frame)
+    // On mobile, skip silhouette wrapping — character is layered on top of text
+    const edges = (W >= 640 && frame)
+      ? liveEdgesAtY(lineY + LINE_HEIGHT * 0.5, rezeX, rezeY, rezeW, rezeH, frame, GAP)
       : null;
 
     if (edges) {
