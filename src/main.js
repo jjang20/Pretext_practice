@@ -23,7 +23,8 @@ Chainsaw Man asks you to sit with the fact that people can be simultaneously the
 const FONT_SIZE   = 17;
 const LINE_HEIGHT = FONT_SIZE * 1.72;
 const FONT        = `${FONT_SIZE}px Georgia, serif`;
-function getGap(W) { return W < 640 ? 12 : 32; }
+const PADDING     = 64;
+const GAP         = 32;
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('main');
@@ -34,14 +35,9 @@ let scrollY       = 0;
 let targetScrollY = 0;
 let prepared      = null;
 
-// ─── Responsive helpers ─────────────────────────────────────────────────────
-function getPadding(W) {
-  return W < 640 ? 24 : 64;
-}
-
 // ─── Character metrics (FIXED at centre of viewport) ────────────────────────
 function getRezeMetrics(W, H) {
-  const rezeH = Math.min(H * (W < 640 ? 0.65 : 0.85), W < 640 ? 550 : 700);
+  const rezeH = Math.min(H * 0.85, 700);
   const rezeW = Math.floor(rezeH * 9 / 16);
   const rezeX = Math.floor(W / 2 - rezeW / 2);
   const rezeY = Math.floor((H - rezeH) / 2);
@@ -51,7 +47,7 @@ function getRezeMetrics(W, H) {
 // ─── Live silhouette lookup ──────────────────────────────────────────────────
 // Read the CURRENT frame's per-row content bounds to get the character's
 // left/right pixel edges at a given screen Y.
-function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame, gap) {
+function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame) {
   const relY = (screenY - rezeY) / rezeH;
   if (relY < 0 || relY >= 1) return null;
 
@@ -68,8 +64,8 @@ function liveEdgesAtY(screenY, rezeX, rezeY, rezeW, rezeH, frame, gap) {
   if (minL >= maxR) return null;
 
   return {
-    left:  rezeX + (minL / frame.vw) * rezeW - gap,
-    right: rezeX + (maxR / frame.vw) * rezeW + gap,
+    left:  rezeX + (minL / frame.vw) * rezeW - GAP,
+    right: rezeX + (maxR / frame.vw) * rezeW + GAP,
   };
 }
 
@@ -86,31 +82,15 @@ window.addEventListener('wheel', e => {
   targetScrollY = Math.max(0, targetScrollY + e.deltaY);
 }, { passive: true });
 
-let touchStartY = 0;
-canvas.addEventListener('touchstart', e => {
-  touchStartY = e.touches[0].clientY;
-}, { passive: false });
-
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const dy = touchStartY - e.touches[0].clientY;
-  touchStartY = e.touches[0].clientY;
-  targetScrollY = Math.max(0, targetScrollY + dy);
-}, { passive: false });
-
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
   requestAnimationFrame(render);
   if (!prepared) return;
 
-  if (reze.paused) reze.play().catch(() => {});
-
   scrollY += (targetScrollY - scrollY) * 0.11;
 
   const W = canvas.width;
   const H = canvas.height;
-  const PADDING = getPadding(W);
-  const GAP     = getGap(W);
 
   // ── Background ──
   ctx.fillStyle = '#f5f0e8';
@@ -142,7 +122,7 @@ function render() {
 
     // Check overlap with character silhouette (use live data if available)
     const edges = frame
-      ? liveEdgesAtY(lineY + LINE_HEIGHT * 0.5, rezeX, rezeY, rezeW, rezeH, frame, GAP)
+      ? liveEdgesAtY(lineY + LINE_HEIGHT * 0.5, rezeX, rezeY, rezeW, rezeH, frame)
       : null;
 
     if (edges) {
@@ -152,31 +132,17 @@ function render() {
 
       let nextCursor = cursor;
 
-      if (W < 640) {
-        // Mobile: use only the wider side to keep text readable
-        const useLeft = leftWidth >= rightWidth;
-        const colW = useLeft ? leftWidth : rightWidth;
-        const colX = useLeft ? PADDING : rightStart;
-        if (colW > 60) {
-          const seg = layoutNextLine(prepared, cursor, colW);
-          if (!seg) break;
-          if (visible) ctx.fillText(seg.text, colX, lineY);
+      if (leftWidth > 40) {
+        const seg = layoutNextLine(prepared, cursor, leftWidth);
+        if (!seg) break;
+        if (visible) ctx.fillText(seg.text, PADDING, lineY);
+        nextCursor = seg.end;
+      }
+      if (rightWidth > 40) {
+        const seg = layoutNextLine(prepared, nextCursor, rightWidth);
+        if (seg) {
+          if (visible) ctx.fillText(seg.text, rightStart, lineY);
           nextCursor = seg.end;
-        }
-      } else {
-        // Desktop: split text into left + right columns
-        if (leftWidth > 40) {
-          const seg = layoutNextLine(prepared, cursor, leftWidth);
-          if (!seg) break;
-          if (visible) ctx.fillText(seg.text, PADDING, lineY);
-          nextCursor = seg.end;
-        }
-        if (rightWidth > 40) {
-          const seg = layoutNextLine(prepared, nextCursor, rightWidth);
-          if (seg) {
-            if (visible) ctx.fillText(seg.text, rightStart, lineY);
-            nextCursor = seg.end;
-          }
         }
       }
       cursor = nextCursor;
@@ -223,20 +189,6 @@ function render() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 reze.addEventListener('canplay', () => reze.play().catch(() => {}));
-
-// Seamless loop: seek back to 0 just before the video ends to avoid the
-// pause/flash gap that the native `loop` attribute causes on mobile browsers.
-reze.addEventListener('timeupdate', () => {
-  if (reze.duration && reze.currentTime > reze.duration - 0.3) {
-    reze.currentTime = 0;
-  }
-});
-// Fallback in case timeupdate misses the window
-reze.addEventListener('ended', () => {
-  reze.currentTime = 0;
-  reze.play().catch(() => {});
-});
-
 reze.play().catch(() => {});
 
 window.addEventListener('resize', resize);
