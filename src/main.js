@@ -41,7 +41,7 @@ function getPadding(W) {
 
 // ─── Character metrics (FIXED at centre of viewport) ────────────────────────
 function getRezeMetrics(W, H) {
-  const rezeH = Math.min(H * (W < 640 ? 0.55 : 0.85), W < 640 ? 400 : 700);
+  const rezeH = Math.min(H * (W < 640 ? 0.65 : 0.85), W < 640 ? 550 : 700);
   const rezeW = Math.floor(rezeH * 9 / 16);
   const rezeX = Math.floor(W / 2 - rezeW / 2);
   const rezeY = Math.floor((H - rezeH) / 2);
@@ -87,15 +87,16 @@ window.addEventListener('wheel', e => {
 }, { passive: true });
 
 let touchStartY = 0;
-window.addEventListener('touchstart', e => {
+canvas.addEventListener('touchstart', e => {
   touchStartY = e.touches[0].clientY;
-}, { passive: true });
+}, { passive: false });
 
-window.addEventListener('touchmove', e => {
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
   const dy = touchStartY - e.touches[0].clientY;
   touchStartY = e.touches[0].clientY;
   targetScrollY = Math.max(0, targetScrollY + dy);
-}, { passive: true });
+}, { passive: false });
 
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
