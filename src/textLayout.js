@@ -1,4 +1,4 @@
-import { prepareWithSegments, layoutWithLines } from '../node_modules/@chenglou/pretext/dist/layout.js';
+import { prepareWithSegments, layoutWithLines } from './lib/pretext/layout.js';
 
 let _prepared = null;
 let _lastText = '';

@@ -1,5 +1,5 @@
 import { prepareText } from './textLayout.js';
-import { layoutNextLine } from '../node_modules/@chenglou/pretext/dist/layout.js';
+import { layoutNextLine } from './lib/pretext/layout.js';
 import { processFrame } from './chromaKey.js';
 
 // ─── Content ─────────────────────────────────────────────────────────────────
